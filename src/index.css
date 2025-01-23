@@ -1,0 +1,204 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.airdrop-custom {
+  padding: -0.5rem;
+  margin-bottom: 89px;
+}
+
+
+/* Add this to your global CSS or component CSS file */
+section hr {
+  display: none;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+.carpet {
+  padding-top: 2rem;
+  padding-bottom: 50rem;
+}
+
+
+.bg-seatop {
+  /* --tw-bg-opacity: 1; */
+  background: linear-gradient(195deg, #000, #fff);
+}
+
+.fish{
+  margin-top: 347px;
+}
+
+.task-btn {
+  background-color: #ca25e8;
+  color: #fff;
+  font-size: .875rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  text-align: center;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  padding: 15px;
+}
+
+:where(.menu li) {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+
+.carpet3 {
+  padding-top: 6rem;
+  padding-bottom: 12rem;
+}
+
+.bg-fish {
+  --tw-bg-opacity: 1;
+  background: linear-gradient(179deg, #f48d2f, #ffffff);
+}
+
+.carpet2 {
+  padding-top: 1rem;
+  padding-bottom: 25rem;
+}
+
+.custom-width{
+    width: calc(100% - -2rem);
+}
+
+.custom-padding{
+    padding: 6px 0px 6px;
+}
+
+.custom-active {
+  width: 28%;
+}
+
+.mt-custom { 
+  margin-top: 2.5rem;
+}
+
+.carpet33 {
+  padding-top: 2rem;
+  padding-bottom: 60rem;
+}
+
+.no-select {
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Old versions of Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
+  pointer-events: none; /* Prevents making it clickable */
+}
+
+/* Custom Toast Styles */
+.toast-container .Toastify__toast {
+  background: linear-gradient(45deg, #0f0c29, #302b63, #24243e);
+  border: 1px solid #f48d2f;
+  color: #fff;
+  font-family: 'Orbitron', sans-serif; /* Futuristic font */
+  font-size: 14px;
+  border-radius: 10px;
+  box-shadow: 0px 0px 15px rgba(255, 99, 71, 0.7);
+}
+
+.toast-container .Toastify__toast--success {
+  border-left: 5px solid #00ffab;
+}
+
+.toast-container .Toastify__toast--error {
+  border-left: 5px solid #ff073a;
+}
+
+.toast-container .Toastify__toast-body {
+  display: flex;
+  align-items: center;
+}
+
+.toast-container .Toastify__close-button {
+  color: #fff;
+  opacity: 0.8;
+  transition: opacity 0.3s;
+}
+
+.toast-container .Toastify__close-button:hover {
+  opacity: 1;
+}
+
+.snackbar-top {
+  position: fixed;
+  top: 10px;
+  margin-left: 199px;
+  display: flex;
+  justify-content: flex-end;
+  transform: translateX(-50%);
+  z-index: 1000;
+  align-items: flex-start;
+  width: 368px;
+}
+
+.p-custom {
+  padding: 0.5rem;
+  margin-bottom: 89px;
+}
+
+.p-custom2 {
+  padding: 1.5rem;
+  margin-bottom: 82px;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #4a5568 #1a1b1f;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #1a1b1f;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #4a5568;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #718096;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, 
+[role="button"] {
+  touch-action: manipulation;
+}
+
+.clip-hex {
+  clip-path: polygon(92% 50%, 75% 93%, 25% 93%, 8% 50%, 25% 7%, 75% 7%);
+}
+
+
