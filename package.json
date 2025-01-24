@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
-  "homepage": "https://tonworkspace.github.io/tonstakingprotocol",
+  "homepage": "https://kygenhack.github.io/tonstakingprotocol",
   "scripts": {
     "deploy": "gh-pages -d dist",
     "dev": "vite",
@@ -20,7 +20,7 @@
     "@telegram-apps/sdk-react": "^1.0.0",
     "@telegram-apps/telegram-ui": "^2.1.5",
     "@ton-api/client": "^0.3.0",
-    "@ton/core": "^0.59.0",
+    "@ton/core": "^0.53.0",
     "@ton/ton": "^13.9.0",
     "@tonconnect/ui-react": "^2.0.5",
     "@tonsolutions/telemetree-react": "^1.1.10",

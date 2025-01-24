@@ -52,8 +52,8 @@ export const useAuth = () => {
       comboTimeLimit: 30,
       cooldownEndTime: null,
       photoUrl: '',
-      ownedSkins: ['default'],
-      activeSkin: 'default',
+      ownedSkins: [],
+      activeSkin: '',
       stakedAmount: 0
     };
 

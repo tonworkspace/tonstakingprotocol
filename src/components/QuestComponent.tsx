@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { FaTelegramPlane, FaTwitter, FaFacebook, FaYoutube, FaInstagram, FaSpinner, FaExternalLinkAlt, FaTrophy, FaGamepad, FaShare, FaCheckCircle, FaClipboardCheck } from 'react-icons/fa';
-import { motion, } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Task, LevelInfo } from '@/gameData';
 
 interface QuestComponentProps {
+  balance: number;
   tasks: Task[];
   levelInfo: LevelInfo;
   handleTaskComplete: (taskId: string) => Promise<void>;
@@ -48,6 +49,7 @@ const formatTimeAgo = (timestamp: number): string => {
 };
 
 const QuestComponent: React.FC<QuestComponentProps> = ({
+  // balance,
   tasks,
   levelInfo,
   handleTaskComplete,
@@ -87,44 +89,44 @@ const QuestComponent: React.FC<QuestComponentProps> = ({
     });
   }, [tasks, activeTab]);
 
-  // Add stats for the tabs
-  const tabStats = useMemo(() => {
-    let totalTasks = 0;
-    let completedCount = 0;
-    let availableRewards = 0;
-    let claimedRewards = 0;
+  // // Add stats for the tabs
+  // const tabStats = useMemo(() => {
+  //   let totalTasks = 0;
+  //   let completedCount = 0;
+  //   let availableRewards = 0;
+  //   let claimedRewards = 0;
     
-    switch (activeTab) {
-      case 'completed':
-        const completedTasks = tasks.filter(task => task.completed);
-        totalTasks = completedTasks.length;
-        completedCount = totalTasks;
-        claimedRewards = completedTasks.reduce((sum, task) => sum + task.reward, 0);
-        break;
-      case 'social':
-        const socialTasks = tasks.filter(task => !!task.platform);
-        totalTasks = socialTasks.length;
-        completedCount = socialTasks.filter(task => task.completed).length;
-        availableRewards = socialTasks.filter(task => !task.completed).reduce((sum, task) => sum + task.reward, 0);
-        claimedRewards = socialTasks.filter(task => task.completed).reduce((sum, task) => sum + task.reward, 0);
-        break;
-      case 'in-game':
-      default:
-        const inGameTasks = tasks.filter(task => !task.platform);
-        totalTasks = inGameTasks.length;
-        completedCount = inGameTasks.filter(task => task.completed).length;
-        availableRewards = inGameTasks.filter(task => !task.completed).reduce((sum, task) => sum + task.reward, 0);
-        claimedRewards = inGameTasks.filter(task => task.completed).reduce((sum, task) => sum + task.reward, 0);
-        break;
-    }
+  //   switch (activeTab) {
+  //     case 'completed':
+  //       const completedTasks = tasks.filter(task => task.completed);
+  //       totalTasks = completedTasks.length;
+  //       completedCount = totalTasks;
+  //       claimedRewards = completedTasks.reduce((sum, task) => sum + task.reward, 0);
+  //       break;
+  //     case 'social':
+  //       const socialTasks = tasks.filter(task => !!task.platform);
+  //       totalTasks = socialTasks.length;
+  //       completedCount = socialTasks.filter(task => task.completed).length;
+  //       availableRewards = socialTasks.filter(task => !task.completed).reduce((sum, task) => sum + task.reward, 0);
+  //       claimedRewards = socialTasks.filter(task => task.completed).reduce((sum, task) => sum + task.reward, 0);
+  //       break;
+  //     case 'in-game':
+  //     default:
+  //       const inGameTasks = tasks.filter(task => !task.platform);
+  //       totalTasks = inGameTasks.length;
+  //       completedCount = inGameTasks.filter(task => task.completed).length;
+  //       availableRewards = inGameTasks.filter(task => !task.completed).reduce((sum, task) => sum + task.reward, 0);
+  //       claimedRewards = inGameTasks.filter(task => task.completed).reduce((sum, task) => sum + task.reward, 0);
+  //       break;
+  //   }
 
-    return {
-      availableRewards,
-      completedCount,
-      totalCount: totalTasks,
-      claimedRewards
-    };
-  }, [tasks, activeTab]);
+  //   return {
+  //     availableRewards,
+  //     completedCount,
+  //     totalCount: totalTasks,
+  //     claimedRewards
+  //   };
+  // }, [tasks, activeTab]);
 
   const renderTaskIcon = (platform?: string) => {
     switch (platform) {
@@ -215,8 +217,17 @@ const QuestComponent: React.FC<QuestComponentProps> = ({
                 ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
                 : 'bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30'}`}
           >
-            <FaExternalLinkAlt className="mr-2 text-xs" />
-            Visit {task.platform}
+            {linkClicked[task.id] ? (
+              <span className="flex items-center gap-2">
+                <FaCheckCircle className="text-xs" />
+                Visited
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <FaExternalLinkAlt className="text-xs" />
+                Start Task
+              </span>
+            )}
           </a>
 
           <button
@@ -224,7 +235,7 @@ const QuestComponent: React.FC<QuestComponentProps> = ({
             onClick={() => handleClaimRewardSimulator(task.id)}
             className={`flex-1 flex items-center justify-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-300
               ${task.completed 
-                ? 'bg-gray-700/50 text-gray-400' 
+                ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
                 : !linkClicked[task.id]
                   ? 'bg-gray-700/50 text-gray-400'
                   : 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:brightness-110'}`}
@@ -234,12 +245,12 @@ const QuestComponent: React.FC<QuestComponentProps> = ({
             ) : task.completed ? (
               <span className="flex items-center gap-2">
                 <FaCheckCircle />
-                Completed
+                Done
               </span>
             ) : (
               <span className="flex items-center gap-2">
                 <FaClipboardCheck />
-                Claim Reward
+                Verify
               </span>
             )}
           </button>
@@ -298,7 +309,7 @@ const QuestComponent: React.FC<QuestComponentProps> = ({
   }, [resetTasks, showSnackbar]);
 
   return (
-    <div className="quest-component p-6 md:p-8 max-w-7xl mx-auto">
+    <div className="quest-component p-4 md:p-8 max-w-7xl mx-auto">
       {/* Header with Reset Timer */}
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Social Tasks</h1>
@@ -311,15 +322,17 @@ const QuestComponent: React.FC<QuestComponentProps> = ({
           {[
             { 
               id: 'social', 
-              label: 'Social', 
+              label: 'Available', 
               icon: FaShare,
               gradient: 'from-blue-500 to-blue-600',
+              count: tasks.filter(task => !task.completed).length
             },
             { 
               id: 'completed', 
               label: 'Completed', 
               icon: FaCheckCircle,
               gradient: 'from-green-500 to-green-600',
+              count: tasks.filter(task => task.completed).length
             }
           ].map(tab => (
             <button
@@ -327,7 +340,7 @@ const QuestComponent: React.FC<QuestComponentProps> = ({
               onClick={() => setActiveTab(tab.id)}
               className={`
                 flex-1 px-4 py-3 rounded-lg text-sm font-medium 
-                transition-all duration-300
+                transition-all duration-300 relative
                 ${activeTab === tab.id 
                   ? `bg-gradient-to-r ${tab.gradient} text-white` 
                   : 'text-gray-400 hover:bg-gray-700/50'}
@@ -336,6 +349,9 @@ const QuestComponent: React.FC<QuestComponentProps> = ({
               <div className="flex items-center justify-center gap-2">
                 <tab.icon className="text-lg" />
                 <span>{tab.label}</span>
+                <span className="ml-1 px-2 py-0.5 text-xs rounded-full bg-white/10">
+                  {tab.count}
+                </span>
               </div>
             </button>
           ))}
@@ -343,50 +359,13 @@ const QuestComponent: React.FC<QuestComponentProps> = ({
       </div>
 
       {/* Task List */}
-      <div className="space-y-4 mb-8">
+      <div className="space-y-4 mb-8 p-custom">
         {filteredAndSortedTasks.map(renderTaskCard)}
       </div>
 
       {/* Responsive Pill-style Rewards Summary */}
       <div className="relative">
-        <div className="overflow-x-auto hide-scrollbar-x">
-          <div className="flex items-center bg-gray-800/30 rounded-full p-2 border border-gray-700/50 whitespace-nowrap min-w-fit">
-            <div className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 rounded-full">
-              <FaTrophy className="text-amber-500 flex-shrink-0" />
-              <div>
-                <div className="text-sm font-medium text-amber-500">
-                  {formatNumber(tabStats.availableRewards)}
-                </div>
-                <div className="text-xs text-gray-400">Available</div>
-              </div>
-            </div>
-
-            <div className="h-4 w-px bg-gray-700/50 mx-2 flex-shrink-0" />
-
-            <div className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 rounded-full">
-              <FaClipboardCheck className="text-white flex-shrink-0" />
-              <div>
-                <div className="text-sm font-medium text-white">
-                  {tabStats.completedCount}/{tabStats.totalCount}
-                </div>
-                <div className="text-xs text-gray-400">Completed</div>
-              </div>
-            </div>
-
-            <div className="h-4 w-px bg-gray-700/50 mx-2 flex-shrink-0" />
-
-            <div className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 rounded-full">
-              <FaCheckCircle className="text-green-500 flex-shrink-0" />
-              <div>
-                <div className="text-sm font-medium text-green-500">
-                  {formatNumber(tabStats.claimedRewards)}
-                </div>
-                <div className="text-xs text-gray-400">Claimed</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
+        
         {/* Custom Scrollbar Styles */}
         <style>{`
           .hide-scrollbar-x {

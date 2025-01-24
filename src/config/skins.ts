@@ -1,4 +1,4 @@
-import { PremsiumScorpion, suistakeLogo } from "@/images";
+import { premiumScorpion, scorp, scorpion } from "@/images";
 
 export interface SkinConfig {
   id: string;
@@ -22,7 +22,7 @@ export const SKINS: SkinConfig[] = [
     name: 'Classic Scorpion',
     description: 'The original scorpion',
     price: 0,
-    image: suistakeLogo,
+    image: scorpion,
     rarity: 'common',
     rewardMultiplier: 2,
     animation: {
@@ -36,7 +36,7 @@ export const SKINS: SkinConfig[] = [
     name: 'Golden Scorpion',
     description: 'A majestic golden scorpion',
     price: 10000,
-    image: suistakeLogo,
+    image: scorp,
     rarity: 'rare',
     rewardMultiplier: 25,
     animation: {
@@ -51,7 +51,7 @@ export const SKINS: SkinConfig[] = [
     name: 'Premium Crystal Scorpion',
     description: 'A mystical scorpion forged from pure gold nuggets',
     price: 25000,
-    image: PremsiumScorpion,
+    image: premiumScorpion,
     rarity: 'epic',
     rewardMultiplier: 50,
     animation: {

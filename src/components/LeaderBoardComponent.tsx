@@ -1,30 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Zap, RefreshCw, Users, Award } from 'lucide-react';
+import { Zap, RefreshCw, ArrowUp, Percent, Users, Award } from 'lucide-react';
 import useAuth from '@/hooks/useAuth';
 import { getLeaderboard, getPlayerRank, getTotalPlayers } from '@/playerSupabase';
 import type { ScorpionMiner } from '@/playerSupabase';
+import NewsShoutbox from './SpecialEventsComponent';
 
-const formatTimeAgo = (timestamp: number): string => {
-  const seconds = Math.floor((Date.now() - timestamp) / 1000);
-  
-  const intervals = {
-    year: 31536000,
-    month: 2592000,
-    week: 604800,
-    day: 86400,
-    hour: 3600,
-    minute: 60
-  };
-
-  for (const [unit, secondsInUnit] of Object.entries(intervals)) {
-    const interval = Math.floor(seconds / secondsInUnit);
-    if (interval >= 1) {
-      return `${interval} ${unit}${interval === 1 ? '' : 's'} ago`;
-    }
-  }
-  
-  return 'just now';
-};
 
 // Custom Progress Component
 const Progress = ({ value = 0 }: { value?: number }) => (
@@ -47,7 +27,7 @@ const PlayerStats = React.memo(({ playerData, playerRank }: {
   };
 
   return (
-    <div className="relative overflow-hidden">
+    <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl p-4 mb-6 shadow-lg">
       <div className="absolute inset-0 bg-grid-white/[0.1] bg-[size:20px_20px]" />
       <div className="relative">
         <div className="flex items-center justify-between">
@@ -75,6 +55,64 @@ const PlayerStats = React.memo(({ playerData, playerRank }: {
     </div>
   );
 });
+
+// Add new analytics component
+const LeaderboardAnalytics = ({ totalPlayers, topPerformers }: {
+  totalPlayers: number;
+  topPerformers: ScorpionMiner[];
+}) => {
+  const getTopPlayerStats = () => {
+    if (topPerformers.length < 3) return null;
+    
+    const top1Score = topPerformers[0].balance;
+    const top2Score = topPerformers[1].balance;
+    const percentageDiff = ((top1Score - top2Score) / top2Score) * 100;
+
+    return {
+      leadDifference: percentageDiff.toFixed(1),
+      topScore: top1Score.toLocaleString(),
+      averageScore: (topPerformers.slice(0, 10)
+        .reduce((acc, player) => acc + player.balance, 0) / 10).toLocaleString()
+    };
+  };
+
+  const stats = getTopPlayerStats();
+
+  return (
+    <div className="grid grid-cols-3 gap-2 mb-4 px-2">
+      <div className="bg-gray-800/40 rounded-lg p-2.5 border border-gray-700/30">
+        <div className="flex items-center gap-1.5 text-gray-400 mb-1">
+          <Users className="w-3 h-3" />
+          <span className="text-xs">Miners</span>
+        </div>
+        <div className="text-sm font-semibold text-white">
+          {totalPlayers.toLocaleString()}
+        </div>
+      </div>
+
+      <div className="bg-gray-800/40 rounded-lg p-2.5 border border-gray-700/30">
+        <div className="flex items-center gap-1.5 text-gray-400 mb-1">
+          <Award className="w-3 h-3" />
+          <span className="text-xs">Top</span>
+        </div>
+        <div className="text-sm font-semibold text-white">
+          {stats?.topScore || '0'} 🦂
+        </div>
+      </div>
+
+      <div className="bg-gray-800/40 rounded-lg p-2.5 border border-gray-700/30">
+        <div className="flex items-center gap-1.5 text-gray-400 mb-1">
+          <Percent className="w-3 h-3" />
+          <span className="text-xs">Lead</span>
+        </div>
+        <div className="text-sm font-semibold text-white flex items-center gap-1">
+          {stats?.leadDifference || '0'}%
+          <ArrowUp className="w-3 h-3 text-green-400" />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Enhanced LeaderboardRow component
 const LeaderboardRow = React.memo(({ player, index, isCurrentUser, topScore }: { 
@@ -245,68 +283,76 @@ const LeaderboardUI: React.FC = () => {
   }, [leaderboardData]);
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-4">
-        <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Leaderboard</h1>
-        <p className="text-gray-400">Compete with other miners to reach the top</p>
+    <div className="w-full max-w-4xl mx-auto bg-gray-900/95 p-custom sm:p-6 rounded-2xl shadow-2xl border border-gray-800/50">
+      {/* Enhanced Header */}
+      <div className="relative mb-8">
+        {/* Decorative Background Elements */}
+        <div className="absolute -top-4 -left-4 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="absolute -top-4 -right-4 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl" />
+        
+        <div className="relative flex justify-between items-start">
+          <div>
+            {/* Main Title with Enhanced Gradient */}
+            <h1 className="relative text-4xl font-extrabold mb-3">
+              <span className="bg-gradient-to-r from-blue-500 via-blue-400 to-purple-600 
+                bg-clip-text text-transparent drop-shadow-sm">
+                GLOBAL RANKINGS
+              </span>
+              <div className="absolute -top-1 -right-2 w-3 h-3 rounded-full 
+                bg-gradient-to-r from-blue-400 to-purple-600 animate-pulse" />
+            </h1>
+
+            {/* Subtitle with Enhanced Design */}
+            <div className="flex flex-col gap-1">
+              <span className="text-2xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-300 
+                bg-clip-text text-transparent">
+                TOP MINERS
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-lg text-gray-400 font-medium">
+                  COMPETING WORLDWIDE
+                </span>
+                <div className="h-px flex-grow bg-gradient-to-r from-blue-500/50 to-transparent" />
+              </div>
+            </div>
+          </div>
+
+          {/* Refresh Button with Enhanced Styling */}
+          <button 
+            onClick={fetchLeaderboard}
+            className="relative group p-3 rounded-xl bg-gradient-to-br from-gray-800/50 to-gray-900/50 
+              border border-gray-700/30 backdrop-blur-sm transition-all duration-300
+              hover:from-gray-700/50 hover:to-gray-800/50 hover:border-gray-600/30"
+          >
+            <RefreshCw className="w-5 h-5 text-blue-400 group-hover:text-blue-300 
+              transition-all duration-300 group-hover:rotate-180" />
+            <div className="absolute inset-0 bg-blue-400/10 rounded-xl opacity-0 
+              group-hover:opacity-100 transition-opacity duration-300" />
+          </button>
+        </div>
       </div>
 
       {isLoading ? (
         <SkeletonLoader />
       ) : (
         <>
-          {/* Player Stats Card */}
-          {playerData && (
-            <div className="bg-gray-800/30 border border-gray-700/50 rounded-xl p-6 mb-4">
-              <PlayerStats playerData={playerData} playerRank={playerRank || 0} />
+          <LeaderboardAnalytics 
+            totalPlayers={totalPlayers} 
+            topPerformers={topPerformers}
+          />
+          
+          {user && playerData && (
+            <div className="px-2 sm:px-0">
+              <PlayerStats 
+                playerData={playerData} 
+                playerRank={playerRank || 0}
+              />
             </div>
           )}
-
-          {/* Analytics Pills */}
-          <div className="relative mb-4">
-            <div className="overflow-x-auto hide-scrollbar-x">
-              <div className="flex items-center bg-gray-800/30 rounded-full p-2 border border-gray-700/50 whitespace-nowrap min-w-fit">
-                <div className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 rounded-full">
-                  <Users className="text-blue-500 flex-shrink-0 w-4 h-4" />
-                  <div>
-                    <div className="text-sm font-medium text-blue-500">
-                      {totalPlayers.toLocaleString()}
-                    </div>
-                    <div className="text-xs text-gray-400">Total Stakers</div>
-                  </div>
-                </div>
-
-                <div className="h-4 w-px bg-gray-700/50 mx-2 flex-shrink-0" />
-
-                <div className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 rounded-full">
-                  <Award className="text-amber-500 flex-shrink-0 w-4 h-4" />
-                  <div>
-                    <div className="text-sm font-medium text-amber-500">
-                      {topPerformers[0]?.balance.toLocaleString() || '0'}
-                    </div>
-                    <div className="text-xs text-gray-400">Top Share</div>
-                  </div>
-                </div>
-
-                <div className="h-4 w-px bg-gray-700/50 mx-2 flex-shrink-0" />
-
-                <div className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 rounded-full">
-                  <RefreshCw className="text-green-500 flex-shrink-0 w-4 h-4" />
-                  <div>
-                    <div className="text-sm font-medium text-green-500">
-                      {formatTimeAgo(lastUpdate.getTime())}
-                    </div>
-                    <div className="text-xs text-gray-400">Last Update</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Leaderboard Table */}
-          <div className="bg-gray-800/30 border border-gray-700/50 rounded-xl overflow-hidden">
-            <div className="hidden sm:grid grid-cols-[auto,1fr,auto] gap-4 px-6 py-4 bg-gray-800/50 border-b border-gray-700/50">
+          <NewsShoutbox/>
+          <div className="rounded-xl border border-gray-700/50 overflow-hidden">
+            {/* Optional: Add table headers for larger screens */}
+            <div className="hidden sm:grid grid-cols-[auto,1fr,auto] gap-4 px-4 py-2 bg-gray-800/50 border-b border-gray-700/50">
               <div className="text-sm font-medium text-gray-400 w-12">Rank</div>
               <div className="text-sm font-medium text-gray-400">Player</div>
               <div className="text-sm font-medium text-gray-400 text-right w-32">Score</div>
@@ -326,30 +372,6 @@ const LeaderboardUI: React.FC = () => {
           </div>
         </>
       )}
-
-      {/* Custom Scrollbar Styles */}
-      <style>{`
-        .hide-scrollbar-x {
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-          -webkit-overflow-scrolling: touch;
-        }
-
-        .hide-scrollbar-x::-webkit-scrollbar {
-          display: none;
-        }
-
-        @media (hover: none) {
-          .hide-scrollbar-x {
-            overflow-x: scroll;
-            scroll-snap-type: x mandatory;
-          }
-          
-          .hide-scrollbar-x > div {
-            scroll-snap-align: start;
-          }
-        }
-      `}</style>
     </div>
   );
 };

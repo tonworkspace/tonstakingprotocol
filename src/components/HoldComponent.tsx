@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Title, Button, Snackbar } from '@telegram-apps/telegram-ui';
+import { Title, Button, Snackbar, Progress } from '@telegram-apps/telegram-ui';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrophyIcon, CalendarIcon, CheckCircle, RefreshCw, HandIcon, StarIcon, CrownIcon, Palette, AlertTriangle, LockIcon, Star, TrendingUp, Zap } from 'lucide-react';
+import { TrophyIcon, CalendarIcon, CheckCircle, RefreshCw, HandIcon, StarIcon, Palette, AlertTriangle, Star, TrendingUp, Zap } from 'lucide-react';
 import StatsModal from './StatsModal';
-import { Task, LevelInfo } from '@/gameData';
+import { Task, UpgradeItem, LevelInfo } from '@/gameData';
+import { ProfileHeader } from './ProfileHeader';
 import { SKINS } from '../config/skins';
 import { purchaseSkin } from '@/services/skinService';
 import { saveWalletAddress, getWalletAddresses, WalletType } from '@/playerSupabase';
 import { WalletSection } from './WalletSection';
-
 
 interface HoldComponentProps {
   user: {
@@ -44,6 +44,7 @@ interface HoldComponentProps {
   totalScorpionsCaught: number;
   setTotalScorpionsCaught: React.Dispatch<React.SetStateAction<number>>;
   currentEvent: { id: string; name: string; description: string; startTime: Date; endTime: Date } | null;
+  upgradeItems: UpgradeItem[];
   upgradeLevels: { [key: string]: { level: number; lastResetTime: number } };
   tasks: Task[];
   isSnackbarVisible: boolean;
@@ -67,89 +68,185 @@ const getLevelBonus = (level: number) => {
 };
 
 import { SkinStore } from './SkinStore';
-import { suistakeLogo } from '@/images';
+import { scorpion } from '@/images';
 
-const AchievementsModal: React.FC<{
-  isOpen: boolean;
-  onClose: () => void;
-  levels: { name: string; minBalance: number; maxBalance: number; level: number }[];
+const UpgradeCard = ({ 
+  upgrade,
+  currentLevel,
+  handleBuyUpgrade,
+  balance,
+  upgradeLevels
+}: {
+  upgrade: UpgradeItem;
   currentLevel: number;
-}> = ({ isOpen, onClose, levels, currentLevel }) => {
-  if (!isOpen) return null;
+  handleBuyUpgrade: (upgradeId: string, baseCost: number) => Promise<void>;
+  balance: number;
+  upgradeLevels: { [key: string]: { level: number; lastResetTime: number } };
+}) => {
+  const cost = upgrade.baseCost * (currentLevel + 1);
+  const canAfford = balance >= cost;
+  const isMaxed = currentLevel >= upgrade.maxLevel;
+
+  // Calculate time until reset
+  const currentUpgrade = upgradeLevels[upgrade.id] || { level: 0, lastResetTime: 0 };
+  const timeUntilReset = upgrade.resetHours * 60 * 60 * 1000 - (Date.now() - currentUpgrade.lastResetTime);
+  const hoursUntilReset = Math.max(0, Math.floor(timeUntilReset / (60 * 60 * 1000)));
+  const minutesUntilReset = Math.max(0, Math.floor((timeUntilReset % (60 * 60 * 1000)) / (60 * 1000)));
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.95 }}
-        animate={{ scale: 1 }}
-        exit={{ scale: 0.95 }}
-        className="bg-gray-800 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="p-6 border-b border-orange-700">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              <CrownIcon size={24} className="text-yellow-500" />
-              All Achievements
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-white transition-colors"
-            >
-              ✕
-            </button>
+    <div className="bg-gray-800 rounded-lg p-4 flex flex-col h-full transition-all duration-200 hover:bg-gray-700/80 border border-orange-700/50">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-gray-700/50">
+            <upgrade.icon className="w-6 h-6 text-orange-400" />
+          </div>
+          <div>
+            <div className="text-lg font-semibold text-white">{upgrade.name}</div>
+            <div className={`text-sm ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
+              {cost} 🦂
+            </div>
           </div>
         </div>
+      </div>
+      
+      <div className="text-sm text-gray-400 mb-3 flex-grow">
+        {upgrade.effect ?? 'No description available'}
+      </div>
+      
+      <div className="space-y-2">
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-400">Level</span>
+          <span className="text-white">{currentLevel}/{upgrade.maxLevel}</span>
+        </div>
+        
+        <div className="w-full bg-gray-700 rounded-full h-2">
+          <div 
+            className={`rounded-full h-2 transition-all duration-300 ${
+              isMaxed ? 'bg-green-500' : 'bg-blue-500'
+            }`}
+            style={{ width: `${(currentLevel / upgrade.maxLevel) * 100}%` }}
+          />
+        </div>
+        
+        <button
+          onClick={() => handleBuyUpgrade(upgrade.id, upgrade.baseCost)}
+          disabled={isMaxed || !canAfford}
+          className={`w-full py-2 px-4 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center gap-2 ${
+            isMaxed 
+              ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+              : canAfford
+                ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                : 'bg-red-600/50 text-red-200 cursor-not-allowed'
+          }`}
+        >
+          {isMaxed ? (
+            <>
+              <Star className="w-4 h-4" />
+              <span>Maxed</span>
+            </>
+          ) : canAfford ? (
+            <>
+              <TrendingUp className="w-4 h-4" />
+              <span>Upgrade</span>
+            </>
+          ) : (
+            <>
+              <Zap className="w-4 h-4" />
+              <span>Cannot Afford</span>
+            </>
+          )}
+        </button>
 
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
-          <div className="space-y-4">
-            {levels.map((level) => (
-              <motion.div
-                key={level.level}
-                className={`bg-gray-700/50 p-4 rounded-lg border ${
-                  level.level <= currentLevel
-                    ? 'border-green-500/50'
-                    : 'border-orange-600/50'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                      level.level <= currentLevel
-                        ? 'bg-green-500/20'
-                        : 'bg-gray-600/20'
-                    }`}>
-                      <span className={`text-lg font-bold ${
-                        level.level <= currentLevel
-                          ? 'text-green-500'
-                          : 'text-gray-400'
-                      }`}>{level.level}</span>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-white">{level.name}</h4>
-                      <p className="text-sm text-gray-400">
-                        Required: {level.minBalance.toLocaleString()} 🦂
-                      </p>
-                    </div>
-                  </div>
-                  {level.level <= currentLevel && (
-                    <CheckCircle className="w-6 h-6 text-green-500" />
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </div>
+        {/* Display reset time */}
+        <div className="text-sm text-gray-400 mt-2">
+          <span>Resets in: {hoursUntilReset}h {minutesUntilReset}m</span>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 };
+
+// const AchievementsModal: React.FC<{
+//   isOpen: boolean;
+//   onClose: () => void;
+//   levels: { name: string; minBalance: number; maxBalance: number; level: number }[];
+//   currentLevel: number;
+// }> = ({ isOpen, onClose, levels, currentLevel }) => {
+//   if (!isOpen) return null;
+
+//   return (
+//     <motion.div
+//       initial={{ opacity: 0 }}
+//       animate={{ opacity: 1 }}
+//       exit={{ opacity: 0 }}
+//       className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+//       onClick={onClose}
+//     >
+//       <motion.div
+//         initial={{ scale: 0.95 }}
+//         animate={{ scale: 1 }}
+//         exit={{ scale: 0.95 }}
+//         className="bg-gray-800 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
+//         onClick={e => e.stopPropagation()}
+//       >
+//         <div className="p-6 border-b border-orange-700">
+//           <div className="flex items-center justify-between">
+//             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+//               <CrownIcon size={24} className="text-yellow-500" />
+//               All Achievements
+//             </h2>
+//             <button
+//               onClick={onClose}
+//               className="text-gray-400 hover:text-white transition-colors"
+//             >
+//               ✕
+//             </button>
+//           </div>
+//         </div>
+
+//         <div className="p-6 overflow-y-auto max-h-[60vh]">
+//           <div className="space-y-4">
+//             {levels.map((level) => (
+//               <motion.div
+//                 key={level.level}
+//                 className={`bg-gray-700/50 p-4 rounded-lg border ${
+//                   level.level <= currentLevel
+//                     ? 'border-green-500/50'
+//                     : 'border-orange-600/50'
+//                 }`}
+//               >
+//                 <div className="flex items-center justify-between">
+//                   <div className="flex items-center gap-3">
+//                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+//                       level.level <= currentLevel
+//                         ? 'bg-green-500/20'
+//                         : 'bg-gray-600/20'
+//                     }`}>
+//                       <span className={`text-lg font-bold ${
+//                         level.level <= currentLevel
+//                           ? 'text-green-500'
+//                           : 'text-gray-400'
+//                       }`}>{level.level}</span>
+//                     </div>
+//                     <div>
+//                       <h4 className="font-semibold text-white">{level.name}</h4>
+//                       <p className="text-sm text-gray-400">
+//                         Required: {level.minBalance.toLocaleString()} 🦂
+//                       </p>
+//                     </div>
+//                   </div>
+//                   {level.level <= currentLevel && (
+//                     <CheckCircle className="w-6 h-6 text-green-500" />
+//                   )}
+//                 </div>
+//               </motion.div>
+//             ))}
+//           </div>
+//         </div>
+//       </motion.div>
+//     </motion.div>
+//   );
+// };
 
 
 const HoldComponent: React.FC<HoldComponentProps> = ({
@@ -166,16 +263,18 @@ const HoldComponent: React.FC<HoldComponentProps> = ({
   setEnergy,
   setCooldown,
   setCooldownTimeRemaining,
+  upgradeLevels,
+  handleBuyUpgrade,
   handleMining,
   handleHarvest,
   showSnackbar,
-  levels,
+  // levels,
   getLevel,
   setLevelInfo,
   tasksCompleted,
   totalScorpionsCaught,
   currentEvent,
-  upgradeLevels: upgradeLevelsProp,
+  upgradeItems,
   isSnackbarVisible,
   setSnackbarVisible,
   snackbarMessage,
@@ -190,12 +289,12 @@ const HoldComponent: React.FC<HoldComponentProps> = ({
   const [particles, setParticles] = useState<{ id: number; x: number; y: number }[]>([]);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [autoCatchInterval, setAutoCatchInterval] = useState<NodeJS.Timeout | null>(null);
-  const autoCatcherLevel = (upgradeLevelsProp?.['8'] || { level: 0 }).level;
+  const autoCatcherLevel = (upgradeLevels?.['8'] || { level: 0 }).level;
 
   const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const regenerationIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const doubleRewardsActive = (upgradeLevelsProp?.['3'] || { level: 0 }).level > 0;
+  const doubleRewardsActive = (upgradeLevels?.['3'] || { level: 0 }).level > 0;
 
   const startHold = useCallback(() => {
     if (!cooldown && energy > 0) {
@@ -453,6 +552,73 @@ const HoldComponent: React.FC<HoldComponentProps> = ({
     </motion.div>
   );
 
+   (item: UpgradeItem) => {
+    console.log('Rendering upgrade item:', item.id);
+    console.log('upgradeLevels:', upgradeLevels);
+    const currentUpgrade = (upgradeLevels && upgradeLevels[item.id]) || { level: 0, lastResetTime: 0 };
+    console.log('currentUpgrade:', currentUpgrade);    
+    const isMaxLevel = currentUpgrade.level >= item.maxLevel;
+    const cost = item.baseCost * (currentUpgrade.level + 1);
+    const canBuy = balance >= cost && !isMaxLevel;
+  
+    const timeUntilReset = item.resetHours * 60 * 60 * 1000 - (Date.now() - currentUpgrade.lastResetTime);
+    const hoursUntilReset = Math.max(0, Math.floor(timeUntilReset / (60 * 60 * 1000)));
+  
+    return (
+      <motion.div
+        key={item.id}
+        className="bg-gray-800 text-white p-4 mb-4 rounded-lg shadow-lg overflow-hidden"
+        whileHover={{ scale: 1.02 }}
+        transition={{ type: 'spring', stiffness: 300 }}
+      >
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center">
+            <div className="bg-gray-700 p-2 rounded-full mr-3">
+              <item.icon size={24} className="text-[#f48d2f]" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold">{item.name}</h3>
+              <p className="text-sm text-gray-400">{item.effect}</p>
+            </div>
+          </div>
+          {isMaxLevel && (
+            <CheckCircle size={24} className="text-green-500" />
+          )}
+        </div>
+  
+        <Progress
+          value={(currentUpgrade.level / item.maxLevel) * 100}
+          className="mb-3"
+        />
+  
+        <div className="flex justify-between items-center">
+          <div>
+            <p className="text-sm">
+              Level: <span className="text-[#f48d2f] font-bold">{currentUpgrade.level}</span> / {item.maxLevel}
+            </p>
+            {!isMaxLevel && (
+              <p className="text-sm text-gray-400">
+                Cost: <span className="text-white font-bold">{cost}</span> Scorpions
+              </p>
+            )}
+            <p className="text-sm text-gray-400 flex items-center">
+              <RefreshCw size={12} className="mr-1" />
+              Reset in: {hoursUntilReset}h
+            </p>
+          </div>
+          <Button
+            disabled={!canBuy}
+            onClick={() => handleBuyUpgrade(item.id, item.baseCost)}
+            size="s"
+            color={canBuy ? 'green' : 'gray'}
+          >
+            {isMaxLevel ? 'Maxed' : 'Upgrade'}
+          </Button>
+        </div>
+      </motion.div>
+    );
+  };
+
   // Add status display
   const renderAutoCatcherStatus = () => {
     if (autoCatcherLevel === 0) return null;
@@ -493,7 +659,7 @@ const HoldComponent: React.FC<HoldComponentProps> = ({
     let intervalId: NodeJS.Timeout | null = null;
     
     // Check if auto-catcher upgrade is active
-    const autoCatcherLevel = upgradeLevelsProp?.autoCatcher?.level || 0;
+    const autoCatcherLevel = upgradeLevels?.autoCatcher?.level || 0;
     
     if (autoCatcherLevel > 0) {
       intervalId = setInterval(() => {
@@ -510,7 +676,7 @@ const HoldComponent: React.FC<HoldComponentProps> = ({
         clearInterval(intervalId);
       }
     };
-  }, [upgradeLevelsProp?.autoCatcher?.level, cooldown, energy, handleMining, rewards]);
+  }, [upgradeLevels?.autoCatcher?.level, cooldown, energy, handleMining, rewards]);
 
   // Add these to your state variables
   const [ownedSkins, setOwnedSkins] = useState<string[]>(() => {
@@ -559,7 +725,7 @@ const HoldComponent: React.FC<HoldComponentProps> = ({
 
   const [showSkinStore, setShowSkinStore] = useState(false);
 
-  const [showAchievements, setShowAchievements] = useState(false);
+  // const [showAchievements, setShowAchievements] = useState(false);
 
   // Add this near the Game Helper Text section to show active multipliers
   const renderMultipliers = () => {
@@ -725,7 +891,30 @@ const HoldComponent: React.FC<HoldComponentProps> = ({
 
   return (
     <div className="relative p-custom">
-     
+      <ProfileHeader
+        photoUrl={user?.photoUrl}
+        username={user?.username}
+        firstName={user?.firstName}
+        lastName={user?.lastName}
+        levelInfo={levelInfo}
+        showBoostButton={true}
+        onBoostClick={() => {/* your boost click handler */}}
+      >
+        <div className="p-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
+            {upgradeItems.map((upgrade) => (
+              <UpgradeCard
+                key={upgrade.id}
+                upgrade={upgrade}
+                currentLevel={(upgradeLevels[upgrade.id]?.level || 0)}
+                handleBuyUpgrade={handleBuyUpgrade}
+                balance={balance}
+                upgradeLevels={upgradeLevels}
+              />
+            ))}
+          </div>
+        </div>
+      </ProfileHeader>
       <div className="flex justify-center mt-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -783,7 +972,7 @@ const HoldComponent: React.FC<HoldComponentProps> = ({
       whileTap={{ scale: 0.95 }}
     >
           <motion.img
-            src={activeSkinConfig?.image || suistakeLogo }
+            src={activeSkinConfig?.image || scorpion }
             alt="Scorpion"
             className="w-48 h-48 object-cover no-select"
             animate={isHolding ? {
@@ -996,6 +1185,8 @@ const HoldComponent: React.FC<HoldComponentProps> = ({
       
       {/* Milestones & Achievements Section */}
       <div className="mt-4 space-y-4">
+      {renderMultipliers()}
+
         {/* Progress Overview */}
         <div className="bg-gray-800/50 backdrop-blur-sm p-4 rounded-xl border border-orange-700/50">
           <div className="flex items-center justify-between mb-4">
@@ -1028,148 +1219,7 @@ const HoldComponent: React.FC<HoldComponentProps> = ({
             <span className="text-xs text-gray-400">{balance.toLocaleString()} 🦂</span>
             <span className="text-xs text-gray-400">{levelInfo.maxBalance.toLocaleString()} 🦂</span>
           </div>
-        </div>
-       
-        {renderMultipliers()}
-
-        {/* Upcoming Milestones */}
-        <div className="bg-gray-800/50 backdrop-blur-sm p-4 rounded-xl border border-orange-700/50">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <TrophyIcon size={20} className="text-[#f48d2f]" />
-              Next Milestones
-            </h3>
-            <span className="text-sm text-gray-400">
-              {levels.filter(level => level.level > levelInfo.level).length} remaining
-            </span>
-          </div>
-
-          <div className="space-y-3">
-            {levels.filter(level => level.level > levelInfo.level).slice(0, 3).length > 0 ? (
-              levels.filter(level => level.level > levelInfo.level).slice(0, 3).map((level, index) => (
-                <motion.div
-                  key={level.level}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="relative bg-gray-700/50 p-4 rounded-lg border border-orange-600/50 hover:border-[#f48d2f]/50 transition-all duration-200"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-[#f48d2f]/20 flex items-center justify-center">
-                        <span className="text-lg font-bold text-[#f48d2f]">{level.level}</span>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-white">{level.name}</h4>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-sm text-[#f48d2f]">
-                            {level.minBalance.toLocaleString()} 🦂
-                          </span>
-                          <span className="text-xs text-gray-400">
-                            ({(level.minBalance - balance).toLocaleString()} more)
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="relative">
-                      <motion.div
-                        className="w-2 h-2 bg-[#f48d2f] rounded-full absolute -top-1 -right-1"
-                        animate={{ scale: [1, 1.5, 1] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      />
-                      <LockIcon className="w-6 h-6 text-gray-500" />
-                    </div>
-                  </div>
-                  
-                  {/* Progress bar */}
-                  <div className="mt-3 relative w-full h-1.5 bg-gray-600 rounded-full overflow-hidden">
-                    <motion.div
-                      className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#f48d2f] to-yellow-500"
-                      initial={{ width: "0%" }}
-                      animate={{ 
-                        width: `${(balance / level.minBalance) * 100}%` 
-                      }}
-                      transition={{ duration: 0.5 }}
-                    />
-                  </div>
-                </motion.div>
-              ))
-            ) : (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 p-6 rounded-lg border border-yellow-500/30"
-              >
-                <div className="text-center space-y-2">
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                  >
-                    <CrownIcon className="w-12 h-12 text-yellow-500 mx-auto" />
-                  </motion.div>
-                  <h3 className="text-xl font-bold text-yellow-500">Maximum Level Achieved!</h3>
-                  <p className="text-gray-400">You've mastered all available ranks</p>
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500/20 rounded-full">
-                    <StarIcon className="w-4 h-4 text-yellow-500" />
-                    <span className="text-yellow-500 font-medium">Ultimate Scorpion Master</span>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </div>
-        </div>
-
-        {/* Recent Achievements */}
-        <div className="bg-gray-800/50 backdrop-blur-sm p-4 rounded-xl border border-orange-700/50">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <CrownIcon size={20} className="text-yellow-500" />
-              Recent Achievements
-            </h3>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="text-sm text-gray-400 hover:text-white transition-colors duration-200"
-              onClick={() => setShowAchievements(true)}
-            >
-              View All
-            </motion.button>
-          </div>
-
-          <div className="space-y-3">
-            {levels.filter(level => level.level <= levelInfo.level).slice(-3).reverse().map((level, index) => (
-              <motion.div
-                key={level.level}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-gray-700/50 p-4 rounded-lg border border-orange-600/50 hover:border-green-500/50 transition-all duration-200"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
-                      <span className="text-lg font-bold text-green-500">{level.level}</span>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-white">{level.name}</h4>
-                      <p className="text-sm text-gray-400">Level {level.level} Achieved</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <motion.div
-                      initial={{ rotate: 0 }}
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center"
-                    >
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                    </motion.div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
+        </div>   
       </div>
       
       {isSnackbarVisible && (
@@ -1187,7 +1237,7 @@ const HoldComponent: React.FC<HoldComponentProps> = ({
       )}
       {renderAutoCatcherStatus()}
       
-      <AnimatePresence>
+      {/* <AnimatePresence>
         {showAchievements && (
           <AchievementsModal
             isOpen={showAchievements}
@@ -1196,7 +1246,7 @@ const HoldComponent: React.FC<HoldComponentProps> = ({
             currentLevel={levelInfo.level}
           />
         )}
-      </AnimatePresence>
+      </AnimatePresence> */}
     
       <WalletSection
         wallets={wallets}

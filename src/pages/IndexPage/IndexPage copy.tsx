@@ -19,7 +19,6 @@ import {
   buyUpgrade,
   checkAndResetUpgrades,
   getActiveSpecialEvents,
-  resetPlayerTasks,
 } from '@/playerSupabase';
 import HoldComponent from '@/components/HoldComponent';
 import InviteComponent from '@/components/InviteComponent';
@@ -449,30 +448,6 @@ export const IndexPage: React.FC = () => {
     }
   }, [authError, error]);
 
-  const handleResetTasks = useCallback(async () => {
-    if (!playerData) return;
-    
-    setIsLoading(true);
-    try {
-      // Reset tasks in database
-      await resetPlayerTasks();
-      
-      // Fetch fresh tasks
-      const freshTasks = await fetchPlayerTasks(playerData.id);
-      
-      // Update local state
-      setTasks(freshTasks);
-      setLinkClicked({});
-      
-      showSnackbar('Tasks Reset', 'All tasks have been reset successfully!');
-    } catch (error) {
-      console.error('Error resetting tasks:', error);
-      showSnackbar('Error', 'Failed to reset tasks. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [playerData, showSnackbar]);
-
   if (isAuthLoading || isLoading) {
     return <LoadingSplashScreen />;
   }
@@ -551,7 +526,6 @@ export const IndexPage: React.FC = () => {
                 <QuestComponent
                   balance={balance}
                   tasks={tasks}
-                  resetTasks={handleResetTasks}
                   levelInfo={levelInfo}
                   handleTaskComplete={handleTaskComplete}
                   isSnackbarVisible={isSnackbarVisible}
@@ -565,6 +539,11 @@ export const IndexPage: React.FC = () => {
                   showSnackbar={showSnackbar}
                   verificationAttempts={0}
                   isVerifying={{}}
+                  resetTasks={() => {
+                    // Implement your reset logic here
+                    // For example:
+                    // resetAllTasks();
+                  }}
                 />
               )}
               {currentTab === 'invite' && (

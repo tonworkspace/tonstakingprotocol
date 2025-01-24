@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronRight, Star, Trophy, HandIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { suistakeLogo } from '@/images';
+import { premiumScorpion } from '@/images';
 
 interface WizardStep {
   title: string;
@@ -53,7 +53,7 @@ const GuestWizard: React.FC<GuestWizardProps> = ({ onComplete }) => {
           }}
         >
           <motion.img 
-            src={suistakeLogo}
+            src={premiumScorpion}
             className="w-12 h-12"
             style={{ filter: "drop-shadow(0 0 8px rgba(249, 115, 22, 0.5))" }}
           />

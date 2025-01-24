@@ -802,21 +802,22 @@ export const getWalletAddresses = async (playerId: number): Promise<WalletData> 
   }
 };
 
-export const resetPlayerTasks = async (playerId: number): Promise<void> => {
+export const resetPlayerTasks = async () => {
   try {
+    const { data: player } = await supabase.auth.getUser();
+    if (!player.user) return;
+
     const { error } = await supabase
       .from('player_tasks')
-      .update({ 
-        completed: false,
-        progress: null 
-      })
-      .eq('player_id', playerId);
+      .delete()
+      .eq('player_id', player.user.id);
 
-    if (error) throw error;
-    
-    console.log(`Tasks reset successfully for player ${playerId}`);
+    if (error) {
+      console.error('Error resetting player tasks:', error);
+      throw error;
+    }
   } catch (error) {
-    console.error('Error resetting player tasks:', error);
+    console.error('Error in resetPlayerTasks:', error);
     throw error;
   }
 };
