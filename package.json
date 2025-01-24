@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
-  "homepage": "https://kygenhack.github.io/tonstakingprotocol",
+  "homepage": "https://tonworkspace.github.io/tonstakingprotocol",
   "scripts": {
     "deploy": "gh-pages -d dist",
     "dev": "vite",
